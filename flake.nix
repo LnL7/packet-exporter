@@ -3,21 +3,24 @@
 
   outputs = { self, nixpkgs }:
     let
-      cratesFun = pkgs: import ./Cargo.nix {
-        inherit pkgs;
-        defaultCrateOverrides = pkgs.defaultCrateOverrides // {
-          packet-exporter = attrs: {
-            buildInputs = [ pkgs.curl ]
-            ++ (with pkgs.darwin.apple_sdk.frameworks;
-            nixpkgs.lib.optional pkgs.stdenv.isDarwin Security);
-          };
-        };
-      };
+      supportedSystems = [ "x86_64-linux" "x86_64-darwin" ];
+      forAllSystems = f: nixpkgs.lib.genAttrs supportedSystems (system: f system);
     in
     {
 
-      defaultPackage.x86_64-darwin = (cratesFun nixpkgs.legacyPackages.x86_64-darwin).rootCrate.build;
-      defaultPackage.x86_64-linux = (cratesFun nixpkgs.legacyPackages.x86_64-linux).rootCrate.build;
+      defaultPackage = forAllSystems (system:
+        let pkgs = import nixpkgs { inherit system; }; in
+        (import ./Cargo.nix {
+          inherit pkgs;
+          defaultCrateOverrides = pkgs.defaultCrateOverrides // {
+            packet-exporter = attrs: {
+              buildInputs = [ pkgs.curl ]
+              ++ (with pkgs.darwin.apple_sdk.frameworks;
+              nixpkgs.lib.optional pkgs.stdenv.isDarwin Security);
+            };
+          };
+        })
+        .rootCrate.build);
 
       nixosModules.packet-exporter =
         { pkgs, ... }:
