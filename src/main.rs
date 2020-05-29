@@ -1,3 +1,4 @@
+use std::env;
 use std::error::Error;
 
 use async_std::task;
@@ -58,7 +59,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     server.at("/metrics").get(metrics);
 
-    println!("Listening on http://127.0.0.1:9122");
-    task::block_on(server.listen("0.0.0.0:9122"))?;
+    let port = env::var("PORT").unwrap_or(String::from("9122"));
+    println!("Listening on http://127.0.0.1:{}", port);
+    task::block_on(server.listen(format!("0.0.0.0:{}", port)))?;
     Ok(())
 }
