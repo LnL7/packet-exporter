@@ -32,5 +32,13 @@
     defaultPackage.x86_64-darwin = self.crates.x86_64-darwin.rootCrate.build;
     defaultPackage.x86_64-linux = self.crates.x86_64-linux.rootCrate.build;
 
+    nixosModules.packet-exporter =
+      { pkgs, ... }:
+      {
+        systemd.services."prometheus-packet-exporter".wantedBy = [ "multi-user.target" ];
+        systemd.services."prometheus-packet-exporter".serviceConfig.ExecStart = "${self.defaultPackage}/bin/packet-exporter";
+        systemd.services."prometheus-packet-exporter".serviceConfig.DynamicUser = "yes";
+      };
+
   };
 }
